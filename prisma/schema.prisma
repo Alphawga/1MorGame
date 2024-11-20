@@ -21,7 +21,6 @@ model User {
   updated_at         DateTime       @updatedAt
   deleted_at         DateTime?
   role              UserRole       @default(USER)
-  // Add your custom user fields here
   
   // Relations
   notifications     Notification[]
@@ -80,7 +79,6 @@ model ActivityLog {
 enum UserRole {
   USER
   PREMIUM
-  // Add more roles as needed
 }
 
 enum AdminRole {
@@ -100,4 +98,5 @@ enum ActivityType {
   DELETE
   LOGIN
   LOGOUT
+  READ
 }

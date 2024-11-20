@@ -1,16 +1,22 @@
 import { publicProcedure, router } from "./trpc";
-import * as superAdmin from "./modules/super-admin";
-import * as admin from "./modules/admin";
-import * as users from "./modules/users";
+import { authRouter } from "./modules/auth";
+import { userRouter } from "./modules/user";
+import { adminRouter } from "./modules/admin";
 
 
 export const appRouter = router({
-  ...superAdmin,
-  ...admin,
-  ...users,
-  ealthCheck: publicProcedure.query(() => {
-    return { message: "API up and running..." };
+  auth: authRouter,
+  user: userRouter,
+  admin: adminRouter,
+  healthCheck: publicProcedure.query(() => {
+    return {
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+    };
   }),
 });
 
+// Export type router type signature,
+// NOT the router itself.
 export type AppRouter = typeof appRouter;
