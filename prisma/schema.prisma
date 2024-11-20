@@ -1,0 +1,103 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Base models with common fields
+model User {
+  id                 String         @id @default(uuid())
+  email              String         @unique
+  password           String
+  first_name         String
+  last_name          String
+  is_email_verified  Boolean        @default(false)
+  is_active         Boolean        @default(true)
+  created_at         DateTime       @default(now())
+  updated_at         DateTime       @updatedAt
+  deleted_at         DateTime?
+  role              UserRole       @default(USER)
+  // Add your custom user fields here
+  
+  // Relations
+  notifications     Notification[]
+}
+
+model Admin {
+  id                String         @id @default(uuid())
+  email             String         @unique
+  password          String
+  name              String
+  role              AdminRole      @default(ADMIN)
+  is_active         Boolean        @default(true)
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
+  deleted_at        DateTime?
+  
+  // Relations
+  permissions       Permission[]
+  notifications     Notification[]
+  activity_logs     ActivityLog[]
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  admins      Admin[]
+}
+
+model Notification {
+  id          String            @id @default(uuid())
+  message     String
+  type        NotificationType
+  is_read     Boolean          @default(false)
+  created_at  DateTime         @default(now())
+  deleted_at  DateTime?
+  
+  // Relations
+  users       User[]
+  admins      Admin[]
+}
+
+model ActivityLog {
+  id          String            @id @default(uuid())
+  action      String
+  admin_id    String
+  type        ActivityType
+  created_at  DateTime         @default(now())
+  deleted_at  DateTime?
+  
+  // Relations
+  admin       Admin            @relation(fields: [admin_id], references: [id])
+}
+
+// Enums
+enum UserRole {
+  USER
+  PREMIUM
+  // Add more roles as needed
+}
+
+enum AdminRole {
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum NotificationType {
+  SYSTEM
+  USER
+  ADMIN
+}
+
+enum ActivityType {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+}
