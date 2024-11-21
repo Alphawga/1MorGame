@@ -16,14 +16,34 @@ model User {
   first_name         String
   last_name          String
   is_email_verified  Boolean        @default(false)
-  is_active         Boolean        @default(true)
+  is_active          Boolean        @default(true)
   created_at         DateTime       @default(now())
   updated_at         DateTime       @updatedAt
   deleted_at         DateTime?
-  role              UserRole       @default(USER)
+  role               UserRole       @default(USER)
+  
+  // New fields for gaming platform
+  preferred_language String?
+  loyalty_points     Int            @default(0)
+  daily_streak      Int            @default(0)
+  last_login        DateTime?
   
   // Relations
-  notifications     Notification[]
+  notifications      Notification[]
+  orders            Order[]
+  cart_items        CartItem[]
+  favorite_games    FavoriteGame[]
+  reviews           Review[]
+  referrals         Referral[]
+  wallet            Wallet?
+  
+  // Add fields for social login
+  google_id          String?        @unique
+  facebook_id        String?        @unique
+  auth_provider      AuthProvider   @default(EMAIL)
+  verification_token String?        @unique
+  reset_token        String?        @unique
+  reset_token_expires DateTime?
 }
 
 model Admin {
@@ -99,4 +119,191 @@ enum ActivityType {
   LOGIN
   LOGOUT
   READ
+}
+
+// New models for gaming platform
+model Product {
+  id              String          @id @default(uuid())
+  name            String
+  description     String
+  price           Decimal         @db.Decimal(10,2)
+  stock_quantity  Int
+  product_type    ProductType
+  game_platform   GamePlatform?
+  is_active       Boolean         @default(true)
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  deleted_at      DateTime?
+
+  // Relations
+  cart_items      CartItem[]
+  order_items     OrderItem[]
+  reviews         Review[]
+}
+
+model Order {
+  id              String          @id @default(uuid())
+  user_id         String
+  total_amount    Decimal         @db.Decimal(10,2)
+  status          OrderStatus     @default(PENDING)
+  payment_method  PaymentMethod
+  payment_status  PaymentStatus   @default(PENDING)
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+
+  // Relations
+  user            User            @relation(fields: [user_id], references: [id])
+  order_items     OrderItem[]
+}
+
+model OrderItem {
+  id              String         @id @default(uuid())
+  order_id        String
+  product_id      String
+  quantity        Int
+  unit_price      Decimal        @db.Decimal(10,2)
+  voucher_code    String?
+  
+  // Relations
+  order           Order          @relation(fields: [order_id], references: [id])
+  product         Product        @relation(fields: [product_id], references: [id])
+}
+
+model CartItem {
+  id              String         @id @default(uuid())
+  user_id         String
+  product_id      String
+  quantity        Int
+  created_at      DateTime       @default(now())
+  
+  // Relations
+  user            User           @relation(fields: [user_id], references: [id])
+  product         Product        @relation(fields: [product_id], references: [id])
+}
+
+model Wallet {
+  id              String         @id @default(uuid())
+  user_id         String         @unique
+  balance         Decimal        @db.Decimal(10,2) @default(0)
+  currency        String
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+
+  // Relations
+  user            User           @relation(fields: [user_id], references: [id])
+  transactions    Transaction[]
+}
+
+model Transaction {
+  id              String         @id @default(uuid())
+  wallet_id       String
+  amount          Decimal        @db.Decimal(10,2)
+  type            TransactionType
+  status          TransactionStatus
+  created_at      DateTime       @default(now())
+  
+  // Relations
+  wallet          Wallet         @relation(fields: [wallet_id], references: [id])
+}
+
+model Review {
+  id              String         @id @default(uuid())
+  user_id         String
+  product_id      String
+  rating          Int
+  comment         String?
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+  
+  // Relations
+  user            User           @relation(fields: [user_id], references: [id])
+  product         Product        @relation(fields: [product_id], references: [id])
+}
+
+model FavoriteGame {
+  id              String         @id @default(uuid())
+  user_id         String
+  game_name       String
+  platform        GamePlatform
+  created_at      DateTime       @default(now())
+  
+  // Relations
+  user            User           @relation(fields: [user_id], references: [id])
+}
+
+model Referral {
+  id              String         @id @default(uuid())
+  referrer_id     String
+  referred_email  String
+  status          ReferralStatus @default(PENDING)
+  points_awarded  Int            @default(0)
+  created_at      DateTime       @default(now())
+  
+  // Relations
+  user            User           @relation(fields: [referrer_id], references: [id])
+}
+
+// Additional enums
+enum ProductType {
+  GAME_VOUCHER
+  IN_GAME_CURRENCY
+  ADD_ON
+}
+
+enum GamePlatform {
+  PS4
+  PS5
+  XBOX_ONE
+  XBOX_SERIES_X
+  PC
+  MOBILE
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+enum PaymentMethod {
+  MPESA
+  USSD
+  MOBILE_BANKING
+  CARD
+  WALLET
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  PURCHASE
+  REFUND
+  REWARD
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum ReferralStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+}
+
+// Add AuthProvider enum
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  FACEBOOK
 }
